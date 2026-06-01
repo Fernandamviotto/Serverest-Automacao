@@ -1,17 +1,83 @@
+// cypress/e2e/login.cy.js
+
 describe('Tela de Login', () => {
-  it('Login com sucesso - Usuário ADM', () => {
+
+  let usuarioRegular
+  let usuarioAdmin
+
+  before(() => {
+    cy.cadastrarUsuarioViaApi({ administrador: 'false' }).then((u) => { usuarioRegular = u })
+    cy.cadastrarUsuarioViaApi({ administrador: 'true'  }).then((u) => { usuarioAdmin  = u })
+  })
+
+  beforeEach(() => {
     cy.visit('/')
-    cy.get('[data-testid="email"]').type('murilo@gmail.com.br')
-    cy.get('[data-testid="senha"]').type('teste')
+  })
+
+  // ── Sucesso ────────────────────────────────────────────────────────────────
+
+  it('Login com sucesso - usuário regular', () => {
+    cy.loginViaUI(usuarioRegular.email, usuarioRegular.password)
+
+    cy.url().should('include', '/home')
+    cy.deveEstarNaHome()
+  })
+
+  it('Login com sucesso - usuário administrador', () => {
+    cy.intercept('POST', '**/login').as('postLogin')
+    cy.loginViaUI(usuarioAdmin.email, usuarioAdmin.password)
+
+    cy.wait('@postLogin').its('response.statusCode').should('eq', 200)
+    cy.url().should('include', '/home')
+    cy.deveVerMenuAdmin()
+  })
+
+  it('Token salvo no localStorage após login bem-sucedido', () => {
+    cy.loginViaUI(usuarioRegular.email, usuarioRegular.password)
+
+    cy.window().then((win) => {
+      expect(win.localStorage.getItem('serverest/userToken')).to.not.be.null
+    })
+  })
+
+  // ── Campos em branco ───────────────────────────────────────────────────────
+
+  it('Exibe erro ao submeter sem preencher nenhum campo', () => {
     cy.get('[data-testid="entrar"]').click()
 
-    cy.url().should('eq', 'https://front.serverest.dev/admin/home')
-    cy.contains('p', 'Este é seu sistema para administrar seu ecommerce.').should('be.visible')
+    cy.deveExibirErro('Email é obrigatório')
+    cy.deveExibirErro('Password é obrigatório')
   })
 
-  it.only('Login com sucesso - Usuário Regular', () => {
-    cy.Login('joaozinho@email.com', 'teste')
+  it('Exibe erro ao submeter apenas com email preenchido', () => {
+    cy.get('[data-testid="email"]').type(usuarioRegular.email)
+    cy.get('[data-testid="entrar"]').click()
 
-    cy.url().should('eq', 'https://front.serverest.dev/home')
+    cy.deveExibirErro('Password é obrigatório')
   })
+
+  // ── Credenciais inválidas ─────────────────────────────────────────────────
+
+  it('Exibe erro com senha incorreta', () => {
+    cy.intercept('POST', '**/login').as('postLogin')
+    cy.loginViaUI(usuarioRegular.email, 'senhaerrada')
+
+    cy.wait('@postLogin').its('response.statusCode').should('eq', 401)
+    cy.deveExibirErro('Email e/ou senha inválidos')
+  })
+
+  it('Exibe erro com e-mail inexistente', () => {
+    cy.loginViaUI(`naoexiste${Date.now()}@qa.com`, 'qualquersenha')
+
+    cy.deveExibirErro('Email e/ou senha inválidos')
+  })
+
+  // ── Rota protegida ─────────────────────────────────────────────────────────
+
+  it('Redireciona para login ao acessar /home sem autenticação', () => {
+    cy.visit('/home')
+
+    cy.url().should('include', '/login')
+  })
+
 })
