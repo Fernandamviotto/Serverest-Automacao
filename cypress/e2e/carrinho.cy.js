@@ -3,7 +3,7 @@
 describe('Carrinho - Remover produto', () => {
 
   let produto
-  const API = () => Cypress.env('apiUrl') || 'https://serverest.onrender.com'
+  const API = () => Cypress.env('apiUrl') || 'https://serverest.dev'
   const token = () => localStorage.getItem('serverest/userToken')
 
   before(() => {
@@ -18,11 +18,11 @@ describe('Carrinho - Remover produto', () => {
     cy.limparCarrinho()
 
     // Adiciona produto ao carrinho via API antes de cada teste
-    cy.request({
-      method: 'POST',
-      url: `${API()}/carrinhos`,
+      cy.request({
+        method: 'POST',
+        url: `${API()}/carrinhos`,
       headers: { Authorization: token() },
-      body: { produtos: [{ idProduto: produto._id, quantidade: 2 }] },
+        body: { produtos: [{ idProduto: produto._id, quantidade: 2 }] },
     })
 
     cy.visit('/carrinho')

@@ -48,11 +48,12 @@ describe('Compra - Adicionar produto ao carrinho', () => {
   it('Deve exibir o produto correto dentro do carrinho', () => {
     const token = () => localStorage.getItem('serverest/userToken')
 
-    cy.request({
-      method: 'POST',
-      url: `${Cypress.env('apiUrl') || 'https://serverest.onrender.com'}/carrinhos`,
-      headers: { Authorization: token() },
-      body: { produtos: [{ idProduto: produto._id, quantidade: 1 }] },
+      cy.request({
+        method: 'POST',
+        url: `${Cypress.env('apiUrl') || 'https://serverest.dev'}/carrinhos`,
+        headers: { Authorization: token },
+        body: { produtos: [{ idProduto: produto._id, quantidade: 1 }] },
+      })
     })
 
     cy.visit('/carrinho')
@@ -62,11 +63,11 @@ describe('Compra - Adicionar produto ao carrinho', () => {
   it('Deve exibir o valor total correto no carrinho', () => {
     const token = () => localStorage.getItem('serverest/userToken')
 
-    cy.request({
-      method: 'POST',
-      url: `${Cypress.env('apiUrl') || 'https://serverest.onrender.com'}/carrinhos`,
-      headers: { Authorization: token() },
-      body: { produtos: [{ idProduto: produto._id, quantidade: 2 }] },
+      cy.request({
+        method: 'POST',
+        url: `${Cypress.env('apiUrl') || 'https://serverest.dev'}/carrinhos`,
+        headers: { Authorization: token },
+        body: { produtos: [{ idProduto: produto._id, quantidade: 2 }] },
     })
 
     cy.visit('/carrinho')
@@ -78,11 +79,11 @@ describe('Compra - Adicionar produto ao carrinho', () => {
   it('Deve finalizar a compra com sucesso', () => {
     const token = () => localStorage.getItem('serverest/userToken')
 
-    cy.request({
-      method: 'POST',
-      url: `${Cypress.env('apiUrl') || 'https://serverest.onrender.com'}/carrinhos`,
-      headers: { Authorization: token() },
-      body: { produtos: [{ idProduto: produto._id, quantidade: 1 }] },
+      cy.request({
+        method: 'POST',
+        url: `${Cypress.env('apiUrl') || 'https://serverest.dev'}/carrinhos`,
+        headers: { Authorization: token },
+        body: { produtos: [{ idProduto: produto._id, quantidade: 1 }] },
     })
 
     cy.intercept('DELETE', '**/carrinhos/concluir-compra').as('finalizarCompra')
@@ -93,5 +94,4 @@ describe('Compra - Adicionar produto ao carrinho', () => {
     cy.wait('@finalizarCompra').its('response.statusCode').should('eq', 200)
     cy.deveExibirErro('Compra finalizada com sucesso')
   })
-
-})
+  

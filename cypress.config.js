@@ -6,7 +6,7 @@ module.exports = defineConfig({
     setupNodeEvents(on, config) {},
   },
   env: {
-    apiUrl: 'https://serverest.onrender.com',
+    apiUrl: 'https://serverest.dev',
   },
   viewportWidth: 1280,
   viewportHeight: 720,

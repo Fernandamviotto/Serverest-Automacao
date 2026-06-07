@@ -1,6 +1,6 @@
 // cypress/support/commands.js
 
-const API = Cypress.env('apiUrl') || 'https://serverest.onrender.com'
+const API = Cypress.env('apiUrl') || 'https://serverest.dev'
 
 // ─────────────────────────────────────────────────────────────
 // USUÁRIOS
@@ -104,10 +104,10 @@ Cypress.Commands.add('criarProduto', (overrides = {}) => {
     ...overrides,
   }
   return cy.request({
-    method: 'POST',
-    url: `${API}/produtos`,
-    headers: { Authorization: token },
-    body: dados,
+      method: 'POST',
+      url: `${API}/produtos`,
+      headers: { Authorization: token },
+      body: dados,
   }).then(({ body, status }) => {
     expect(status).to.eq(201)
     return { ...dados, _id: body._id }
@@ -124,11 +124,11 @@ Cypress.Commands.add('criarProduto', (overrides = {}) => {
  */
 Cypress.Commands.add('limparCarrinho', () => {
   const token = localStorage.getItem('serverest/userToken')
-  cy.request({
-    method: 'DELETE',
-    url: `${API}/carrinhos/cancelar-compra`,
-    headers: { Authorization: token },
-    failOnStatusCode: false,
+    cy.request({
+      method: 'DELETE',
+      url: `${API}/carrinhos/cancelar-compra`,
+      headers: { Authorization: token },
+      failOnStatusCode: false,
   })
 })
 
