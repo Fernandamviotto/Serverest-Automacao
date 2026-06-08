@@ -118,6 +118,25 @@ Cypress.Commands.add('limparCarrinho', () => {
   })
 })
 
+Cypress.Commands.add('adicionarAoCarrinhoApi', (produtos) => {
+  const token = window.localStorage.getItem('serverest/userToken')
+  return cy.request({
+    method:  'POST',
+    url:     `${API}/carrinhos`,
+    headers: { Authorization: token },
+    body:    { produtos },
+  })
+})
+
+Cypress.Commands.add('concluirCompraApi', () => {
+  const token = window.localStorage.getItem('serverest/userToken')
+  return cy.request({
+    method:  'DELETE',
+    url:     `${API}/carrinhos/concluir-compra`,
+    headers: { Authorization: token },
+  })
+})
+
 Cypress.Commands.add('semearCarrinho', (produto, amount = 1) => {
   const item = {
     _id:        produto._id,
