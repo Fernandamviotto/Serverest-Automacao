@@ -1,34 +1,49 @@
 describe('Cadastro de Usuário', () => {
 
+
   it('Cadastro de usuário regular com sucesso', () => {
+    const nome  = 'Super Poderosas'
+    const email = `regular${Date.now()}@qa.com`
+
     cy.visit('/cadastrarusuarios')
-    cy.get('[data-testid="nome"]').type('Super poderosas')
-    cy.get('[data-testid="email"]').type(`regular${Date.now()}@qa.com`)
-    cy.get('[data-testid="password"]').type('as-suoper-poderosas@gmail.com')
+    cy.get('[data-testid="nome"]').type(nome)
+    cy.get('[data-testid="email"]').type(email)
+    cy.get('[data-testid="password"]').type('teste@123')
     cy.get('[data-testid="checkbox"]').uncheck()
     cy.get('[data-testid="cadastrar"]').click()
 
     cy.contains('Cadastro realizado com sucesso').should('be.visible')
+    cy.ehAdm(nome, email, 'nao')
+    cy.deleteUsuario(email)
   })
 
   it('Cadastro de usuário administrador com sucesso', () => {
+    const nome  = 'Admin Teste'
+    const email = `admin${Date.now()}@qa.com`
+
     cy.intercept('POST', '**/usuarios').as('cadastroUsuario')
 
     cy.visit('/cadastrarusuarios')
-    cy.get('[data-testid="nome"]').type('Admin Teste')
-    cy.get('[data-testid="email"]').type(`admin${Date.now()}@qa.com`)
-    cy.get('[data-testid="password"]').type('teste@gmail.com')
+    cy.get('[data-testid="nome"]').type(nome)
+    cy.get('[data-testid="email"]').type(email)
+    cy.get('[data-testid="password"]').type('teste@123')
     cy.get('[data-testid="checkbox"]').check()
     cy.get('[data-testid="cadastrar"]').click()
 
     cy.wait('@cadastroUsuario').its('response.statusCode').should('eq', 201)
     cy.contains('Cadastro realizado com sucesso').should('be.visible')
+    cy.ehAdm(nome, email, 'sim')
+    cy.deleteUsuario(email)
   })
 
+
   it('Cadastro sem sucesso - sem credenciais fornecidas', () => {
+    cy.intercept('POST', '**/usuarios').as('cadastroUsuario')
+
     cy.visit('/cadastrarusuarios')
     cy.get('[data-testid="cadastrar"]').click()
 
+    cy.wait('@cadastroUsuario').its('response.statusCode').should('eq', 400)
     cy.deveExibirErro('Nome é obrigatório')
     cy.deveExibirErro('Email é obrigatório')
     cy.deveExibirErro('Password é obrigatório')
