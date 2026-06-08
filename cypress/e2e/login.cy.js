@@ -1,5 +1,3 @@
-// cypress/e2e/login.cy.js
-
 describe('Tela de Login', () => {
 
   let usuarioRegular
@@ -13,8 +11,6 @@ describe('Tela de Login', () => {
   beforeEach(() => {
     cy.visit('/')
   })
-
-  // ── Sucesso ────────────────────────────────────────────────────────────────
 
   it('Login com sucesso - usuário regular', () => {
     cy.loginViaUI(usuarioRegular.email, usuarioRegular.password)
@@ -35,12 +31,13 @@ describe('Tela de Login', () => {
   it('Token salvo no localStorage após login bem-sucedido', () => {
     cy.loginViaUI(usuarioRegular.email, usuarioRegular.password)
 
-    cy.window().then((win) => {
-      expect(win.localStorage.getItem('serverest/userToken')).to.not.be.null
-    })
-  })
+    cy.url().should('include', '/home')
 
-  // ── Campos em branco ───────────────────────────────────────────────────────
+    cy.window()
+      .its('localStorage')
+      .invoke('getItem', 'serverest/userToken')
+      .should('not.be.null')
+  })
 
   it('Exibe erro ao submeter sem preencher nenhum campo', () => {
     cy.get('[data-testid="entrar"]').click()
@@ -56,8 +53,6 @@ describe('Tela de Login', () => {
     cy.deveExibirErro('Password é obrigatório')
   })
 
-  // ── Credenciais inválidas ─────────────────────────────────────────────────
-
   it('Exibe erro com senha incorreta', () => {
     cy.intercept('POST', '**/login').as('postLogin')
     cy.loginViaUI(usuarioRegular.email, 'senhaerrada')
@@ -71,8 +66,6 @@ describe('Tela de Login', () => {
 
     cy.deveExibirErro('Email e/ou senha inválidos')
   })
-
-  // ── Rota protegida ─────────────────────────────────────────────────────────
 
   it('Redireciona para login ao acessar /home sem autenticação', () => {
     cy.visit('/home')

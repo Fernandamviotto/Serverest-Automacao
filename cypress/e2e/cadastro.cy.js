@@ -1,12 +1,10 @@
-// cypress/e2e/cadastro.cy.js
-
 describe('Cadastro de Usuário', () => {
 
   it('Cadastro de usuário regular com sucesso', () => {
     cy.visit('/cadastrarusuarios')
-    cy.get('[data-testid="nome"]').type('Murilo Vinicius Silva')
+    cy.get('[data-testid="nome"]').type('Super poderosas')
     cy.get('[data-testid="email"]').type(`regular${Date.now()}@qa.com`)
-    cy.get('[data-testid="password"]').type('teste@123')
+    cy.get('[data-testid="password"]').type('as-suoper-poderosas@gmail.com')
     cy.get('[data-testid="checkbox"]').uncheck()
     cy.get('[data-testid="cadastrar"]').click()
 
@@ -17,9 +15,9 @@ describe('Cadastro de Usuário', () => {
     cy.intercept('POST', '**/usuarios').as('cadastroUsuario')
 
     cy.visit('/cadastrarusuarios')
-    cy.get('[data-testid="nome"]').type('Admin Teste Silva')
+    cy.get('[data-testid="nome"]').type('Admin Teste')
     cy.get('[data-testid="email"]').type(`admin${Date.now()}@qa.com`)
-    cy.get('[data-testid="password"]').type('teste@123')
+    cy.get('[data-testid="password"]').type('teste@gmail.com')
     cy.get('[data-testid="checkbox"]').check()
     cy.get('[data-testid="cadastrar"]').click()
 

@@ -1,97 +1,69 @@
-// cypress/e2e/carrinho.cy.js
+describe('Carrinho - Lista de Compras', () => {
 
-describe('Carrinho - Remover produto', () => {
-
+  const CARRINHO = '/minhaListaDeProdutos'
   let produto
-  const API = () => Cypress.env('apiUrl') || 'https://serverest.onrender.com'
-  const token = () => localStorage.getItem('serverest/userToken')
 
   before(() => {
-    cy.cadastrarUsuarioViaApi({ administrador: 'true' }).then((usuario) => {
-      cy.loginViaApi(usuario.email, usuario.password)
-      cy.criarProduto().then((p) => { produto = p })
-    })
+    cy.loginComoAdmin()
+    cy.criarProduto().then((p) => { produto = p })
   })
 
   beforeEach(() => {
     cy.loginComoUsuario()
-    cy.limparCarrinho()
-
-    // Adiciona produto ao carrinho via API antes de cada teste
-    cy.request({
-      method: 'POST',
-      url: `${API()}/carrinhos`,
-      headers: { Authorization: token() },
-      body: { produtos: [{ idProduto: produto._id, quantidade: 2 }] },
-    })
-
-    cy.visit('/carrinho')
   })
 
-  // ── Remoção unitária ───────────────────────────────────────────────────────
+  it('Deve exibir o produto adicionado com nome e quantidade', () => {
+    cy.semearCarrinho(produto, 2)
+    cy.visit(CARRINHO)
 
-  it('Deve diminuir a quantidade do produto ao clicar em remover uma unidade', () => {
-    cy.get('[data-testid="diminuirProduto"]').first().click()
-
-    cy.get('[data-testid="quantidadeProduto"]').first().should('contain', '1')
+    cy.get('[data-testid="shopping-cart-product-name"]').should('contain', produto.nome)
+    cy.get('[data-testid="shopping-cart-product-quantity"]').should('contain', '2')
   })
 
-  it('Deve remover o produto ao zerar a quantidade', () => {
-    cy.get('[data-testid="diminuirProduto"]').first().click()
-    cy.get('[data-testid="diminuirProduto"]').first().click()
+  it('Deve diminuir a quantidade do produto ao clicar em "-"', () => {
+    cy.semearCarrinho(produto, 2)
+    cy.visit(CARRINHO)
 
-    cy.contains(produto.nome).should('not.exist')
+    cy.get('[data-testid="product-decrease-quantity"]').first().click()
+
+    cy.get('[data-testid="shopping-cart-product-quantity"]').should('contain', '1')
   })
 
-  it('Deve remover o produto ao clicar no botão excluir', () => {
-    cy.get('[data-testid="excluirProduto"]').first().click()
+  it('Deve aumentar a quantidade do produto ao clicar em "+"', () => {
+    cy.semearCarrinho(produto, 1)
+    cy.visit(CARRINHO)
 
-    cy.contains(produto.nome).should('not.exist')
+    cy.get('[data-testid="product-increase-quantity"]').first().click()
+
+    cy.get('[data-testid="shopping-cart-product-quantity"]').should('contain', '2')
   })
 
-  // ── Cancelar compra ────────────────────────────────────────────────────────
+  it('Deve atualizar o preço conforme a quantidade do produto', () => {
+    cy.semearCarrinho(produto, 1)
+    cy.visit(CARRINHO)
 
-  it('Deve cancelar a compra e limpar o carrinho via botão', () => {
-    cy.intercept('DELETE', '**/carrinhos/cancelar-compra').as('cancelarCompra')
+    cy.contains(String(produto.preco)).should('be.visible')
 
-    cy.contains('Cancelar Compra').click()
+    cy.get('[data-testid="product-increase-quantity"]').first().click()
 
-    cy.wait('@cancelarCompra').its('response.statusCode').should('eq', 200)
-    cy.deveExibirErro('Compra cancelada com sucesso')
+    cy.contains(String(produto.preco * 2)).should('be.visible')
   })
 
-  it('Deve cancelar a compra via API e confirmar devolução do estoque', () => {
-    cy.request({
-      method: 'DELETE',
-      url: `${API()}/carrinhos/cancelar-compra`,
-      headers: { Authorization: token() },
-    }).then(({ status, body }) => {
-      expect(status).to.eq(200)
-      expect(body.message).to.include('Registro excluído com sucesso')
-    })
+  it('Deve esvaziar o carrinho ao clicar em "Limpar Lista"', () => {
+    cy.semearCarrinho(produto, 2)
+    cy.visit(CARRINHO)
 
-    // Valida que o estoque foi devolvido
-    cy.request(`${API()}/produtos/${produto._id}`).then(({ body }) => {
-      expect(body.quantidade).to.be.greaterThan(0)
-    })
+    cy.get('[data-testid="limparLista"]').click()
+
+    cy.get('[data-testid="shopping-cart-empty-message"]').should('be.visible')
   })
 
-  // ── Estado vazio ───────────────────────────────────────────────────────────
+  it('Deve exibir mensagem de carrinho vazio quando não há produtos', () => {
+    cy.visit(CARRINHO)
 
-  it('Deve exibir carrinho vazio após remover todos os produtos', () => {
-    cy.get('[data-testid="excluirProduto"]').first().click()
-
-    cy.get('[data-testid="produto"]').should('not.exist')
-  })
-
-  it('Deve atualizar o total ao remover um produto', () => {
-    const totalEsperado = produto.preco * 2
-
-    cy.contains(`R$ ${totalEsperado.toFixed(2).replace('.', ',')}`).should('be.visible')
-
-    cy.get('[data-testid="diminuirProduto"]').first().click()
-
-    cy.contains(`R$ ${produto.preco.toFixed(2).replace('.', ',')}`).should('be.visible')
+    cy.get('[data-testid="shopping-cart-empty-message"]')
+      .should('be.visible')
+      .and('contain', 'Seu carrinho está vazio')
   })
 
 })

@@ -1,16 +1,5 @@
-// cypress/support/commands.js
+const API = Cypress.env('apiUrl') || 'https://serverest.dev'
 
-const API = Cypress.env('apiUrl') || 'https://serverest.onrender.com'
-
-// ─────────────────────────────────────────────────────────────
-// USUÁRIOS
-// ─────────────────────────────────────────────────────────────
-
-/**
- * Cria um usuário via API e salva os dados em Cypress.env('usuario')
- * @param {object} overrides - campos a sobrescrever (ex: { administrador: 'true' })
- * @returns dados do usuário criado (nome, email, password, _id)
- */
 Cypress.Commands.add('cadastrarUsuarioViaApi', (overrides = {}) => {
   const dados = {
     nome: `Usuario Teste ${Date.now()}`,
@@ -28,10 +17,6 @@ Cypress.Commands.add('cadastrarUsuarioViaApi', (overrides = {}) => {
   })
 })
 
-/**
- * Verifica via API se o usuário é ou não administrador
- * Padrão do professor: cy.ehAdm(nome, email, 'sim'/'nao')
- */
 Cypress.Commands.add('ehAdm', (nome, email, ehAdmin) => {
   cy.request(`${API}/usuarios?email=${email}`).then(({ body }) => {
     const usuario = body.usuarios[0]
@@ -41,24 +26,13 @@ Cypress.Commands.add('ehAdm', (nome, email, ehAdmin) => {
   })
 })
 
-// ─────────────────────────────────────────────────────────────
-// LOGIN
-// ─────────────────────────────────────────────────────────────
-
-/**
- * Preenche o formulário de login pela UI e clica em Entrar.
- * Usar somente nos testes que validam a tela de login.
- */
 Cypress.Commands.add('loginViaUI', (email, password) => {
   cy.get('[data-testid="email"]').clear().type(email)
-  cy.get('[data-testid="password"]').clear().type(password)
+  // O campo de senha do front da ServeRest usa data-testid="senha" (não "password")
+  cy.get('[data-testid="senha"]').clear().type(password)
   cy.get('[data-testid="entrar"]').click()
 })
 
-/**
- * Autentica via API (sem UI), salva token e visita /home.
- * Usar no beforeEach de todos os testes que não testam login.
- */
 Cypress.Commands.add('loginViaApi', (email, password) => {
   cy.request('POST', `${API}/login`, { email, password }).then(({ body }) => {
     localStorage.setItem('serverest/userEmail', email)
@@ -67,33 +41,18 @@ Cypress.Commands.add('loginViaApi', (email, password) => {
   cy.visit('/home')
 })
 
-/**
- * Cria usuário admin via API + faz login via API.
- * Uma linha no beforeEach para contexto admin completo.
- */
 Cypress.Commands.add('loginComoAdmin', () => {
   cy.cadastrarUsuarioViaApi({ administrador: 'true' }).then((usuario) => {
     cy.loginViaApi(usuario.email, usuario.password)
   })
 })
 
-/**
- * Cria usuário regular via API + faz login via API.
- */
 Cypress.Commands.add('loginComoUsuario', () => {
   cy.cadastrarUsuarioViaApi({ administrador: 'false' }).then((usuario) => {
     cy.loginViaApi(usuario.email, usuario.password)
   })
 })
 
-// ─────────────────────────────────────────────────────────────
-// PRODUTOS
-// ─────────────────────────────────────────────────────────────
-
-/**
- * Cria um produto via API (requer token de admin no localStorage).
- * @returns objeto com dados do produto + _id
- */
 Cypress.Commands.add('criarProduto', (overrides = {}) => {
   const token = localStorage.getItem('serverest/userToken')
   const dados = {
@@ -114,14 +73,6 @@ Cypress.Commands.add('criarProduto', (overrides = {}) => {
   })
 })
 
-// ─────────────────────────────────────────────────────────────
-// CARRINHO
-// ─────────────────────────────────────────────────────────────
-
-/**
- * Limpa o carrinho do usuário autenticado via API.
- * Chamar no beforeEach de testes de carrinho.
- */
 Cypress.Commands.add('limparCarrinho', () => {
   const token = localStorage.getItem('serverest/userToken')
   cy.request({
@@ -132,22 +83,30 @@ Cypress.Commands.add('limparCarrinho', () => {
   })
 })
 
-// ─────────────────────────────────────────────────────────────
-// ASSERTIONS REUTILIZÁVEIS
-// ─────────────────────────────────────────────────────────────
+Cypress.Commands.add('semearCarrinho', (produto, amount = 1) => {
+  const item = {
+    _id: produto._id,
+    nome: produto.nome,
+    preco: produto.preco,
+    imagem: produto.imagem,
+    quantidade: produto.quantidade,
+    descricao: produto.descricao,
+    amount,
+  }
+  cy.window().then((win) => {
+    win.localStorage.setItem('products', JSON.stringify([item]))
+  })
+})
 
-/** Valida que o usuário está na home com navbar visível */
 Cypress.Commands.add('deveEstarNaHome', () => {
   cy.url().should('include', '/home')
   cy.get('nav').should('be.visible')
 })
 
-/** Valida elementos exclusivos de administrador */
 Cypress.Commands.add('deveVerMenuAdmin', () => {
   cy.contains('a', 'Cadastrar Usuários').should('be.visible')
 })
 
-/** Valida mensagem de erro/feedback na tela */
 Cypress.Commands.add('deveExibirErro', (mensagem) => {
   cy.contains(mensagem).should('be.visible')
 })
