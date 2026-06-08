@@ -1,59 +1,12 @@
 const API = Cypress.env('apiUrl') || 'https://serverest.dev'
 
-
-Cypress.Commands.add('ehAdm', (usuario, email, adm) => {
-  cy.request({
-    method: 'GET',
-    url: `${API}/usuarios`,
-    qs: { nome: usuario, email: email },
-  }).then((response) => {
-    expect(response.status).to.eq(200)
-    const administrador_response = response.body.usuarios[0].administrador
-    if (adm === 'sim') {
-      expect(administrador_response).to.be.equal('true')
-    } else {
-      expect(administrador_response).to.be.equal('false')
-    }
-  })
-})
-
 Cypress.Commands.add('cadastraUsuario', (nome, email, senha, administrador) => {
   cy.request({
     method: 'POST',
-    url: `${API}/usuarios`,
-    body: {
-      nome: nome,
-      email: email,
-      password: senha,
-      administrador: administrador,
-    },
+    url:    `${API}/usuarios`,
+    body:   { nome, email, password: senha, administrador },
   })
 })
-
-Cypress.Commands.add('deleteUsuario', (email) => {
-  cy.request({
-    method: 'GET',
-    url: `${API}/usuarios`,
-    qs: { email: email },
-  }).then((response) => {
-    cy.request({
-      method: 'DELETE',
-      url: `${API}/usuarios/${response.body.usuarios[0]._id}`,
-    })
-  })
-})
-
-Cypress.Commands.add('login_api', (email, senha, tela) => {
-  cy.request({
-    method: 'POST',
-    url: `${API}/login`,
-    body: { email: email, password: senha },
-  }).then((response) => {
-    window.localStorage.setItem('serverest/userToken', response.body.authorization)
-  })
-  cy.visit(`/${tela}`)
-})
-
 
 Cypress.Commands.add('cadastrarUsuarioViaApi', (overrides = {}) => {
   const dados = {
@@ -71,6 +24,43 @@ Cypress.Commands.add('cadastrarUsuarioViaApi', (overrides = {}) => {
     })
 })
 
+Cypress.Commands.add('deleteUsuario', (email) => {
+  cy.request({
+    method: 'GET',
+    url:    `${API}/usuarios`,
+    qs:     { email },
+  }).then(({ body }) => {
+    cy.request({
+      method: 'DELETE',
+      url:    `${API}/usuarios/${body.usuarios[0]._id}`,
+    })
+  })
+})
+
+Cypress.Commands.add('ehAdm', (nome, email, adm) => {
+  cy.request({
+    method: 'GET',
+    url:    `${API}/usuarios`,
+    qs:     { nome, email },
+  }).then(({ body, status }) => {
+    expect(status).to.eq(200)
+    const esperado = adm === 'sim' ? 'true' : 'false'
+    expect(body.usuarios[0].administrador).to.eq(esperado)
+  })
+})
+
+
+Cypress.Commands.add('login_api', (email, senha, tela) => {
+  cy.request({
+    method: 'POST',
+    url:    `${API}/login`,
+    body:   { email, password: senha },
+  }).then(({ body }) => {
+    window.localStorage.setItem('serverest/userToken', body.authorization)
+  })
+  cy.visit(`/${tela}`)
+})
+
 Cypress.Commands.add('loginViaApi', (email, password) => {
   cy.login_api(email, password, 'home')
 })
@@ -86,6 +76,7 @@ Cypress.Commands.add('loginComoUsuario', () => {
     cy.loginViaApi(usuario.email, usuario.password)
   })
 })
+
 
 Cypress.Commands.add('criarProduto', (overrides = {}) => {
   const token = localStorage.getItem('serverest/userToken')
@@ -108,15 +99,6 @@ Cypress.Commands.add('criarProduto', (overrides = {}) => {
   })
 })
 
-Cypress.Commands.add('limparCarrinho', () => {
-  const token = localStorage.getItem('serverest/userToken')
-  cy.request({
-    method:           'DELETE',
-    url:              `${API}/carrinhos/cancelar-compra`,
-    headers:          { Authorization: token },
-    failOnStatusCode: false,
-  })
-})
 
 Cypress.Commands.add('adicionarAoCarrinhoApi', (produtos) => {
   const token = window.localStorage.getItem('serverest/userToken')
@@ -134,6 +116,16 @@ Cypress.Commands.add('concluirCompraApi', () => {
     method:  'DELETE',
     url:     `${API}/carrinhos/concluir-compra`,
     headers: { Authorization: token },
+  })
+})
+
+Cypress.Commands.add('limparCarrinho', () => {
+  const token = localStorage.getItem('serverest/userToken')
+  cy.request({
+    method:           'DELETE',
+    url:              `${API}/carrinhos/cancelar-compra`,
+    headers:          { Authorization: token },
+    failOnStatusCode: false,
   })
 })
 
