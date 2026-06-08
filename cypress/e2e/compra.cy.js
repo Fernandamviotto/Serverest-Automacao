@@ -1,97 +1,65 @@
 // cypress/e2e/compra.cy.js
+//
+// Fluxo real de compra no front da ServeRest:
+//   - A home (/home) lista os produtos (GET /produtos) em cards.
+//   - Pesquisa: input [data-testid="pesquisar"] + botão [data-testid="botaoPesquisar"].
+//   - Adicionar ao carrinho: botão [data-testid="adicionarNaLista"] ("Adicionar a
+//     lista"). Ele grava o item no localStorage E navega para /minhaListaDeProdutos.
+//   - A Lista de Compras (carrinho real) fica em /minhaListaDeProdutos.
+//   - Não há "Finalizar Compra" no front; a rota /carrinho é só "Em construção".
 
 describe('Compra - Adicionar produto ao carrinho', () => {
 
   let produto
 
   before(() => {
-    // Cria admin + produto uma única vez para toda a suite
-    cy.cadastrarUsuarioViaApi({ administrador: 'true' }).then((usuario) => {
-      cy.loginViaApi(usuario.email, usuario.password)
-      cy.criarProduto().then((p) => { produto = p })
-    })
+    // Admin cria um produto único para toda a suite
+    cy.loginComoAdmin()
+    cy.criarProduto().then((p) => { produto = p })
   })
 
   beforeEach(() => {
     cy.loginComoUsuario()
-    cy.limparCarrinho()
   })
 
-  // ── Adicionar ao carrinho ──────────────────────────────────────────────────
+  // ── Home / listagem ───────────────────────────────────────────────────────────
 
-  it('Deve exibir produtos disponíveis na home', () => {
+  it('Deve exibir produtos e a barra de pesquisa na home', () => {
     cy.deveEstarNaHome()
-    cy.get('[data-testid="produto"]').should('have.length.greaterThan', 0)
+    cy.get('[data-testid="pesquisar"]').should('be.visible')
+    cy.get('[data-testid="adicionarNaLista"]').should('have.length.greaterThan', 0)
   })
 
-  it('Deve adicionar um produto ao carrinho pela home', () => {
-    cy.deveEstarNaHome()
-    cy.get('[data-testid="produto"]').first().within(() => {
-      cy.get('[data-testid="adicionarNaListaDeProdutos"]').click()
-    })
+  // ── Pesquisa ──────────────────────────────────────────────────────────────────
 
-    cy.contains('Adicionar ao carrinho').click()
-    cy.deveExibirErro('Produto adicionado com sucesso')
-  })
+  it('Deve pesquisar e encontrar o produto criado', () => {
+    cy.get('[data-testid="pesquisar"]').type(produto.nome)
+    cy.get('[data-testid="botaoPesquisar"]').click()
 
-  it('Deve refletir o produto adicionado no ícone do carrinho', () => {
-    cy.deveEstarNaHome()
-    cy.get('[data-testid="produto"]').first().within(() => {
-      cy.get('[data-testid="adicionarNaListaDeProdutos"]').click()
-    })
-
-    cy.get('[data-testid="quantidadeTotalItemsCarrinho"]').should('contain', '1')
-  })
-
-  // ── Carrinho ───────────────────────────────────────────────────────────────
-
-  it('Deve exibir o produto correto dentro do carrinho', () => {
-    const token = () => localStorage.getItem('serverest/userToken')
-
-    cy.request({
-      method: 'POST',
-      url: `${Cypress.env('apiUrl') || 'https://serverest.dev'}/carrinhos`,
-      headers: { Authorization: token() },
-      body: { produtos: [{ idProduto: produto._id, quantidade: 1 }] },
-    })
-
-    cy.visit('/carrinho')
     cy.contains(produto.nome).should('be.visible')
   })
 
-  it('Deve exibir o valor total correto no carrinho', () => {
-    const token = () => localStorage.getItem('serverest/userToken')
+  // ── Adicionar ao carrinho ─────────────────────────────────────────────────────
 
-    cy.request({
-      method: 'POST',
-      url: `${Cypress.env('apiUrl') || 'https://serverest.dev'}/carrinhos`,
-      headers: { Authorization: token() },
-      body: { produtos: [{ idProduto: produto._id, quantidade: 2 }] },
-    })
+  it('Deve adicionar o produto ao carrinho pela home', () => {
+    cy.get('[data-testid="pesquisar"]').type(produto.nome)
+    cy.get('[data-testid="botaoPesquisar"]').click()
 
-    cy.visit('/carrinho')
-    cy.contains(`R$ ${(produto.preco * 2).toFixed(2).replace('.', ',')}`).should('be.visible')
+    // O botão grava no carrinho e já navega para a Lista de Compras
+    cy.get('[data-testid="adicionarNaLista"]').first().click()
+
+    cy.url().should('include', '/minhaListaDeProdutos')
+    cy.get('[data-testid="shopping-cart-product-name"]').should('contain', produto.nome)
+    cy.get('[data-testid="shopping-cart-product-quantity"]').should('contain', '1')
   })
 
-  // ── Finalizar compra ───────────────────────────────────────────────────────
+  // ── Navegação ─────────────────────────────────────────────────────────────────
 
-  it('Deve finalizar a compra com sucesso', () => {
-    const token = () => localStorage.getItem('serverest/userToken')
+  it('Deve acessar a Lista de Compras pelo menu de navegação', () => {
+    cy.get('[data-testid="lista-de-compras"]').click()
 
-    cy.request({
-      method: 'POST',
-      url: `${Cypress.env('apiUrl') || 'https://serverest.dev'}/carrinhos`,
-      headers: { Authorization: token() },
-      body: { produtos: [{ idProduto: produto._id, quantidade: 1 }] },
-    })
-
-    cy.intercept('DELETE', '**/carrinhos/concluir-compra').as('finalizarCompra')
-
-    cy.visit('/carrinho')
-    cy.contains('Finalizar Compra').click()
-
-    cy.wait('@finalizarCompra').its('response.statusCode').should('eq', 200)
-    cy.deveExibirErro('Compra finalizada com sucesso')
+    cy.url().should('include', '/minhaListaDeProdutos')
+    cy.get('[data-testid="shopping-cart-empty-message"]').should('be.visible')
   })
 
 })

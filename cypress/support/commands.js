@@ -51,7 +51,8 @@ Cypress.Commands.add('ehAdm', (nome, email, ehAdmin) => {
  */
 Cypress.Commands.add('loginViaUI', (email, password) => {
   cy.get('[data-testid="email"]').clear().type(email)
-  cy.get('[data-testid="password"]').clear().type(password)
+  // O campo de senha do front da ServeRest usa data-testid="senha" (não "password")
+  cy.get('[data-testid="senha"]').clear().type(password)
   cy.get('[data-testid="entrar"]').click()
 })
 
@@ -129,6 +130,32 @@ Cypress.Commands.add('limparCarrinho', () => {
     url: `${API}/carrinhos/cancelar-compra`,
     headers: { Authorization: token },
     failOnStatusCode: false,
+  })
+})
+
+/**
+ * Semeia o carrinho da Lista de Compras (rota /minhaListaDeProdutos).
+ *
+ * IMPORTANTE: o carrinho do front da ServeRest é 100% localStorage (chave
+ * 'products'), independente da API POST /carrinhos. Cada item carrega um
+ * campo `amount` (quantidade na lista). Chamar após o login e antes de
+ * visitar /minhaListaDeProdutos.
+ *
+ * @param {object} produto - objeto retornado por cy.criarProduto()
+ * @param {number} amount - quantidade do produto no carrinho (default 1)
+ */
+Cypress.Commands.add('semearCarrinho', (produto, amount = 1) => {
+  const item = {
+    _id: produto._id,
+    nome: produto.nome,
+    preco: produto.preco,
+    imagem: produto.imagem,
+    quantidade: produto.quantidade,
+    descricao: produto.descricao,
+    amount,
+  }
+  cy.window().then((win) => {
+    win.localStorage.setItem('products', JSON.stringify([item]))
   })
 })
 

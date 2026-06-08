@@ -35,9 +35,14 @@ describe('Tela de Login', () => {
   it('Token salvo no localStorage após login bem-sucedido', () => {
     cy.loginViaUI(usuarioRegular.email, usuarioRegular.password)
 
-    cy.window().then((win) => {
-      expect(win.localStorage.getItem('serverest/userToken')).to.not.be.null
-    })
+    // Espera o redirect (login concluído) antes de checar o token
+    cy.url().should('include', '/home')
+
+    // .should() aqui tem retry, evitando a corrida com a resposta async do login
+    cy.window()
+      .its('localStorage')
+      .invoke('getItem', 'serverest/userToken')
+      .should('not.be.null')
   })
 
   // ── Campos em branco ───────────────────────────────────────────────────────
