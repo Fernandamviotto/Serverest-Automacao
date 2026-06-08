@@ -1,6 +1,6 @@
 // cypress/support/commands.js
 
-const API = Cypress.env('apiUrl') || 'https://serverest.onrender.com'
+const API = Cypress.env('apiUrl') || 'https://serverest.dev'
 
 // ─────────────────────────────────────────────────────────────
 // USUÁRIOS

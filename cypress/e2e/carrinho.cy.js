@@ -3,7 +3,7 @@
 describe('Carrinho - Remover produto', () => {
 
   let produto
-  const API = () => Cypress.env('apiUrl') || 'https://serverest.onrender.com'
+  const API = () => Cypress.env('apiUrl') || 'https://serverest.dev'
   const token = () => localStorage.getItem('serverest/userToken')
 
   before(() => {

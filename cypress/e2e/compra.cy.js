@@ -50,7 +50,7 @@ describe('Compra - Adicionar produto ao carrinho', () => {
 
     cy.request({
       method: 'POST',
-      url: `${Cypress.env('apiUrl') || 'https://serverest.onrender.com'}/carrinhos`,
+      url: `${Cypress.env('apiUrl') || 'https://serverest.dev'}/carrinhos`,
       headers: { Authorization: token() },
       body: { produtos: [{ idProduto: produto._id, quantidade: 1 }] },
     })
@@ -64,7 +64,7 @@ describe('Compra - Adicionar produto ao carrinho', () => {
 
     cy.request({
       method: 'POST',
-      url: `${Cypress.env('apiUrl') || 'https://serverest.onrender.com'}/carrinhos`,
+      url: `${Cypress.env('apiUrl') || 'https://serverest.dev'}/carrinhos`,
       headers: { Authorization: token() },
       body: { produtos: [{ idProduto: produto._id, quantidade: 2 }] },
     })
@@ -80,7 +80,7 @@ describe('Compra - Adicionar produto ao carrinho', () => {
 
     cy.request({
       method: 'POST',
-      url: `${Cypress.env('apiUrl') || 'https://serverest.onrender.com'}/carrinhos`,
+      url: `${Cypress.env('apiUrl') || 'https://serverest.dev'}/carrinhos`,
       headers: { Authorization: token() },
       body: { produtos: [{ idProduto: produto._id, quantidade: 1 }] },
     })
