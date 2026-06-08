@@ -12,7 +12,6 @@ describe('Carrinho - Lista de Compras', () => {
     cy.loginComoUsuario()
   })
 
-  // ─── Exibição ──────────────────────────────────────────────────────────────
 
   it('Deve exibir o produto adicionado com nome e quantidade', () => {
     cy.semearCarrinho(produto, 2)
@@ -30,7 +29,6 @@ describe('Carrinho - Lista de Compras', () => {
       .and('contain', 'Seu carrinho está vazio')
   })
 
-  // ─── Manipulação de quantidade ────────────────────────────────────────────
 
   it('Deve diminuir a quantidade do produto ao clicar em "-"', () => {
     cy.semearCarrinho(produto, 2)
@@ -60,8 +58,6 @@ describe('Carrinho - Lista de Compras', () => {
 
     cy.contains(String(produto.preco * 2)).should('be.visible')
   })
-
-  // ─── Limpeza de carrinho ───────────────────────────────────────────────────
 
   it('Deve esvaziar o carrinho ao clicar em "Limpar Lista"', () => {
     cy.semearCarrinho(produto, 2)

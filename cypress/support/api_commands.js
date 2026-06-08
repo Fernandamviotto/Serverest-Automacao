@@ -10,14 +10,15 @@ Cypress.Commands.add('cadastraUsuario', (nome, email, senha, administrador) => {
 
 Cypress.Commands.add('cadastrarUsuarioViaApi', (overrides = {}) => {
   const dados = {
-    nome:          `Usuario Teste ${Date.now()}`,
-    email:         `teste${Date.now()}@qa.com`,
+    nome:          'Pata Mia',
+    email:         'patamia@bol.com',
     password:      'teste@123',
     administrador: 'false',
     ...overrides,
   }
 
-  return cy.cadastraUsuario(dados.nome, dados.email, dados.password, dados.administrador)
+  return cy.deleteUsuario(dados.email)
+    .then(() => cy.cadastraUsuario(dados.nome, dados.email, dados.password, dados.administrador))
     .then(({ body, status }) => {
       expect(status).to.eq(201)
       return { ...dados, _id: body._id }
@@ -26,13 +27,17 @@ Cypress.Commands.add('cadastrarUsuarioViaApi', (overrides = {}) => {
 
 Cypress.Commands.add('deleteUsuario', (email) => {
   cy.request({
-    method: 'GET',
-    url:    `${API}/usuarios`,
-    qs:     { email },
+    method:           'GET',
+    url:              `${API}/usuarios`,
+    qs:               { email },
+    failOnStatusCode: false,
   }).then(({ body }) => {
+    const usuario = body.usuarios?.[0]
+    if (!usuario) return 
+
     cy.request({
       method: 'DELETE',
-      url:    `${API}/usuarios/${body.usuarios[0]._id}`,
+      url:    `${API}/usuarios/${usuario._id}`,
     })
   })
 })
