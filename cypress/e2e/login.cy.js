@@ -1,5 +1,3 @@
-// cypress/e2e/login.cy.js
-
 describe('Tela de Login', () => {
 
   let usuarioRegular
@@ -7,40 +5,39 @@ describe('Tela de Login', () => {
 
   before(() => {
     cy.cadastrarUsuarioViaApi({ administrador: 'false' }).then((u) => { usuarioRegular = u })
-    cy.cadastrarUsuarioViaApi({ administrador: 'true'  }).then((u) => { usuarioAdmin  = u })
+    cy.cadastrarUsuarioViaApi({ administrador: 'true'  }).then((u) => { usuarioAdmin   = u })
   })
 
   beforeEach(() => {
-    cy.visit('/')
+    cy.visit('/login')
   })
-
-  // ── Sucesso ────────────────────────────────────────────────────────────────
 
   it('Login com sucesso - usuário regular', () => {
     cy.loginViaUI(usuarioRegular.email, usuarioRegular.password)
 
-    cy.url().should('include', '/home')
     cy.deveEstarNaHome()
   })
 
   it('Login com sucesso - usuário administrador', () => {
     cy.intercept('POST', '**/login').as('postLogin')
+
     cy.loginViaUI(usuarioAdmin.email, usuarioAdmin.password)
 
     cy.wait('@postLogin').its('response.statusCode').should('eq', 200)
-    cy.url().should('include', '/home')
+    cy.deveEstarNaHome()
     cy.deveVerMenuAdmin()
   })
 
   it('Token salvo no localStorage após login bem-sucedido', () => {
     cy.loginViaUI(usuarioRegular.email, usuarioRegular.password)
 
-    cy.window().then((win) => {
-      expect(win.localStorage.getItem('serverest/userToken')).to.not.be.null
-    })
+    cy.deveEstarNaHome()
+    cy.window()
+      .its('localStorage')
+      .invoke('getItem', 'serverest/userToken')
+      .should('not.be.null')
   })
 
-  // ── Campos em branco ───────────────────────────────────────────────────────
 
   it('Exibe erro ao submeter sem preencher nenhum campo', () => {
     cy.get('[data-testid="entrar"]').click()
@@ -49,17 +46,16 @@ describe('Tela de Login', () => {
     cy.deveExibirErro('Password é obrigatório')
   })
 
-  it('Exibe erro ao submeter apenas com email preenchido', () => {
+  it('Exibe erro ao submeter apenas com e-mail preenchido', () => {
     cy.get('[data-testid="email"]').type(usuarioRegular.email)
     cy.get('[data-testid="entrar"]').click()
 
     cy.deveExibirErro('Password é obrigatório')
   })
 
-  // ── Credenciais inválidas ─────────────────────────────────────────────────
-
   it('Exibe erro com senha incorreta', () => {
     cy.intercept('POST', '**/login').as('postLogin')
+
     cy.loginViaUI(usuarioRegular.email, 'senhaerrada')
 
     cy.wait('@postLogin').its('response.statusCode').should('eq', 401)
@@ -67,12 +63,10 @@ describe('Tela de Login', () => {
   })
 
   it('Exibe erro com e-mail inexistente', () => {
-    cy.loginViaUI(`naoexiste${Date.now()}@qa.com`, 'qualquersenha')
+    cy.loginViaUI(`naoexiste${Date.now()}@bol.com`, 'qualquersenha')
 
     cy.deveExibirErro('Email e/ou senha inválidos')
   })
-
-  // ── Rota protegida ─────────────────────────────────────────────────────────
 
   it('Redireciona para login ao acessar /home sem autenticação', () => {
     cy.visit('/home')

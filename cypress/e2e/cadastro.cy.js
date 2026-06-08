@@ -1,36 +1,49 @@
-// cypress/e2e/cadastro.cy.js
-
 describe('Cadastro de Usuário', () => {
 
+
   it('Cadastro de usuário regular com sucesso', () => {
+    const nome  = 'Super Poderosas'
+    const email = `superpoderosas@bol.com`
+
     cy.visit('/cadastrarusuarios')
-    cy.get('[data-testid="nome"]').type('Murilo Vinicius Silva')
-    cy.get('[data-testid="email"]').type(`regular${Date.now()}@qa.com`)
+    cy.get('[data-testid="nome"]').type(nome)
+    cy.get('[data-testid="email"]').type(email)
     cy.get('[data-testid="password"]').type('teste@123')
     cy.get('[data-testid="checkbox"]').uncheck()
     cy.get('[data-testid="cadastrar"]').click()
 
     cy.contains('Cadastro realizado com sucesso').should('be.visible')
+    cy.ehAdm(nome, email, 'nao')
+    cy.deleteUsuario(email)
   })
 
   it('Cadastro de usuário administrador com sucesso', () => {
+    const nome  = 'Macaco Louco'
+    const email = `admintotal@bol.com`
+
     cy.intercept('POST', '**/usuarios').as('cadastroUsuario')
 
     cy.visit('/cadastrarusuarios')
-    cy.get('[data-testid="nome"]').type('Admin Teste Silva')
-    cy.get('[data-testid="email"]').type(`admin${Date.now()}@qa.com`)
+    cy.get('[data-testid="nome"]').type(nome)
+    cy.get('[data-testid="email"]').type(email)
     cy.get('[data-testid="password"]').type('teste@123')
     cy.get('[data-testid="checkbox"]').check()
     cy.get('[data-testid="cadastrar"]').click()
 
     cy.wait('@cadastroUsuario').its('response.statusCode').should('eq', 201)
     cy.contains('Cadastro realizado com sucesso').should('be.visible')
+    cy.ehAdm(nome, email, 'sim')
+    cy.deleteUsuario(email)
   })
 
+
   it('Cadastro sem sucesso - sem credenciais fornecidas', () => {
+    cy.intercept('POST', '**/usuarios').as('cadastroUsuario')
+
     cy.visit('/cadastrarusuarios')
     cy.get('[data-testid="cadastrar"]').click()
 
+    cy.wait('@cadastroUsuario').its('response.statusCode').should('eq', 400)
     cy.deveExibirErro('Nome é obrigatório')
     cy.deveExibirErro('Email é obrigatório')
     cy.deveExibirErro('Password é obrigatório')
