@@ -1,45 +1,46 @@
-describe('Compra - Adicionar produto ao carrinho', () => {
+describe('Compra - Conclusão de compra via API', () => {
 
+  const API = Cypress.env('apiUrl')
   let produto
 
+  // Setup: um admin cria, via API, o produto que será comprado nos testes.
   before(() => {
     cy.loginComoAdmin()
-    cy.criarProduto().then((p) => { produto = p })
+    cy.criarProduto({ quantidade: 50 }).then((p) => { produto = p })
   })
 
+  // Cada compra é feita por um usuário regular novo, autenticado via API.
   beforeEach(() => {
-    cy.loginComoUsuario()
+    cy.cadastrarUsuarioViaApi({ administrador: 'false' }).then((usuario) => {
+      cy.login_api(usuario.email, usuario.password, 'home')
+    })
   })
 
-  it('Deve exibir produtos e a barra de pesquisa na home', () => {
-    cy.deveEstarNaHome()
-    cy.get('[data-testid="pesquisar"]').should('be.visible')
-    cy.get('[data-testid="adicionarNaLista"]').should('have.length.greaterThan', 0)
+  it('Deve realizar a compra de um produto com sucesso', () => {
+    cy.adicionarAoCarrinhoApi([{ idProduto: produto._id, quantidade: 2 }]).then((res) => {
+      expect(res.status).to.eq(201)
+      expect(res.body.message).to.eq('Cadastro realizado com sucesso')
+    })
+
+    cy.concluirCompraApi().then((res) => {
+      expect(res.status).to.eq(200)
+      expect(res.body.message).to.eq('Registro excluído com sucesso')
+    })
   })
 
-  it('Deve pesquisar e encontrar o produto criado', () => {
-    cy.get('[data-testid="pesquisar"]').type(produto.nome)
-    cy.get('[data-testid="botaoPesquisar"]').click()
+  it('Deve dar baixa no estoque após concluir a compra', () => {
+    const quantidadeComprada = 3
 
-    cy.contains(produto.nome).should('be.visible')
-  })
+    cy.request(`${API}/produtos/${produto._id}`).then((res) => {
+      const estoqueAntes = res.body.quantidade
 
-  it('Deve adicionar o produto ao carrinho pela home', () => {
-    cy.get('[data-testid="pesquisar"]').type(produto.nome)
-    cy.get('[data-testid="botaoPesquisar"]').click()
+      cy.adicionarAoCarrinhoApi([{ idProduto: produto._id, quantidade: quantidadeComprada }])
+      cy.concluirCompraApi()
 
-    cy.get('[data-testid="adicionarNaLista"]').first().click()
-
-    cy.url().should('include', '/minhaListaDeProdutos')
-    cy.get('[data-testid="shopping-cart-product-name"]').should('contain', produto.nome)
-    cy.get('[data-testid="shopping-cart-product-quantity"]').should('contain', '1')
-  })
-
-  it('Deve acessar a Lista de Compras pelo menu de navegação', () => {
-    cy.get('[data-testid="lista-de-compras"]').click()
-
-    cy.url().should('include', '/minhaListaDeProdutos')
-    cy.get('[data-testid="shopping-cart-empty-message"]').should('be.visible')
+      cy.request(`${API}/produtos/${produto._id}`).then((depois) => {
+        expect(depois.body.quantidade).to.eq(estoqueAntes - quantidadeComprada)
+      })
+    })
   })
 
 })
