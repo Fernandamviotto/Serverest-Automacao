@@ -9,9 +9,8 @@ describe('Tela de Login', () => {
   })
 
   beforeEach(() => {
-    cy.visit('/')
+    cy.visit('/login')
   })
-
 
   it('Login com sucesso - usuário regular', () => {
     cy.loginViaUI(usuarioRegular.email, usuarioRegular.password)
@@ -64,7 +63,7 @@ describe('Tela de Login', () => {
   })
 
   it('Exibe erro com e-mail inexistente', () => {
-    cy.loginViaUI(`naoexiste${Date.now()}@qa.com`, 'qualquersenha')
+    cy.loginViaUI(`naoexiste${Date.now()}@bol.com`, 'qualquersenha')
 
     cy.deveExibirErro('Email e/ou senha inválidos')
   })

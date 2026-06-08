@@ -13,8 +13,6 @@ describe('Compra - Conclusão de compra via API', () => {
     })
   })
 
-  // ─── Fluxo de compra ───────────────────────────────────────────────────────
-
   it('Deve realizar a compra de um produto com sucesso', () => {
     cy.adicionarAoCarrinhoApi([{ idProduto: produto._id, quantidade: 2 }]).then((res) => {
       expect(res.status).to.eq(201)
@@ -26,8 +24,6 @@ describe('Compra - Conclusão de compra via API', () => {
       expect(res.body.message).to.eq('Registro excluído com sucesso')
     })
   })
-
-  // ─── Impacto no estoque ────────────────────────────────────────────────────
 
   it('Deve dar baixa no estoque após concluir a compra', () => {
     const quantidadeComprada = 3

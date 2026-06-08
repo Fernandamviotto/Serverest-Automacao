@@ -3,7 +3,7 @@ describe('Cadastro de Usuário', () => {
 
   it('Cadastro de usuário regular com sucesso', () => {
     const nome  = 'Super Poderosas'
-    const email = `regular${Date.now()}@qa.com`
+    const email = `superpoderosas@bol.com`
 
     cy.visit('/cadastrarusuarios')
     cy.get('[data-testid="nome"]').type(nome)
@@ -18,8 +18,8 @@ describe('Cadastro de Usuário', () => {
   })
 
   it('Cadastro de usuário administrador com sucesso', () => {
-    const nome  = 'Admin Teste'
-    const email = `admin${Date.now()}@qa.com`
+    const nome  = 'Macaco Louco'
+    const email = `admintotal@bol.com`
 
     cy.intercept('POST', '**/usuarios').as('cadastroUsuario')
 
